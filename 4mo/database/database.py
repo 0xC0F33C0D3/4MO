@@ -11,5 +11,4 @@ Base = declarative_base()
 from . import models  
 
 def init_db():
-    print(f"Создаю таблицы в базе: {DATABASE_URL}")
     Base.metadata.create_all(bind=engine)

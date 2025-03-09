@@ -24,7 +24,6 @@ async def start_order_creation(update: Update, context: ContextTypes.DEFAULT_TYP
 async def enter_description(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.message.from_user.id
     description = update.message.text
-
     db = SessionLocal()
     user = get_user(db, user_id)
     
@@ -33,7 +32,7 @@ async def enter_description(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         db.close()
         return ConversationHandler.END
 
-    create_order(db, description, user.id)
+    create_order(db, description, user_id)
     db.close()
 
     await update.message.reply_text("✅ Заказ успешно создан! Он теперь доступен исполнителям.")

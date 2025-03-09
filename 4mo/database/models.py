@@ -26,7 +26,7 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     description = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)  # Дата создания заказа
-    status = Column(String, default="Ожидает выполнения")  # Статус заказа
+    status = Column(String, default="Новый")  # Статус заказа
     customer_id = Column(Integer, ForeignKey('users.id'))
     executor_id = Column(Integer, ForeignKey('users.id'), nullable=True)  # Кто взял заказ
 

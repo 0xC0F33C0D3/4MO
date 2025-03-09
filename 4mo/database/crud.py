@@ -1,7 +1,14 @@
 from sqlalchemy.orm import Session
 from .models import User, Order
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+from telegram import Bot
 
+
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = Bot(token=BOT_TOKEN)
 def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.telegram_id == user_id).first()
 
@@ -31,7 +38,7 @@ def create_order(db: Session, description: str, customer_id: int):
         description=description,
         customer_id=customer_id,
         created_at=datetime.utcnow(),
-        status="Ожидает выполнения"
+        status="Новый"
     )
     db.add(db_order)
     db.commit()
@@ -39,7 +46,11 @@ def create_order(db: Session, description: str, customer_id: int):
     return db_order
 
 def get_orders(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Order).offset(skip).limit(limit).all()
+    return db.query(Order).filter(Order.status == "Новый").all()
+
+def get_order_by_id(db: Session, order_id: int):
+    return db.query(Order).filter(Order.id == order_id).first()
+
 
 def get_active_orders_for_executor(db: Session, executor_id: int):
     return db.query(Order).filter(Order.executor_id == executor_id, Order.status == "В работе").all()
@@ -47,14 +58,45 @@ def get_active_orders_for_executor(db: Session, executor_id: int):
 def get_unfinished_orders_for_customer(db: Session, customer_id: int):
     return db.query(Order).filter(Order.customer_id == customer_id, Order.status != "Завершен").all()
 
-def assign_order_to_executor(db: Session, order_id: int, executor_id: int):
-    order = db.query(Order).filter(Order.id == order_id, Order.status == "Ожидает выполнения").first()
+async def assign_order_to_executor(db: Session, order_id: int, executor_id: int):
+    order = db.query(Order).filter(Order.id == order_id, Order.status == "Новый").first()
     if not order:
         return None  # Заказ уже взят или не существует
     
     order.executor_id = executor_id
-    order.status = "В работе"
+    await update_order_status(db, order_id, "В работе")
     db.commit()
     db.refresh(order)
     return order
 
+async def update_order_status(db: Session, order_id: int, new_status: str):
+    """Обновляет статус заказа и уведомляет заказчика и исполнителя"""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        return None  # Если заказ не найден
+
+    old_status = order.status  # Запоминаем предыдущий статус
+    order.status = new_status
+    db.commit()
+    db.refresh(order)
+
+    message_text = f"🔔 Статус вашего заказа ID {order_id} изменился: {old_status} => {new_status}"
+
+    # Уведомляем заказчика
+    customer = db.query(User).filter(User.telegram_id == order.customer_id).first()
+    if customer:
+        try:
+            await bot.send_message(chat_id=customer.telegram_id, text=message_text)
+        except Exception as e:
+            print(f"Ошибка отправки уведомления заказчику: {e}")
+
+    # Уведомляем исполнителя (если заказ взят)
+    if order.executor_id:
+        executor = db.query(User).filter(User.telegram_id == order.executor_id).first()
+        if executor:
+            try:
+                await bot.send_message(chat_id=executor.telegram_id, text=message_text)
+            except Exception as e:
+                print(f"Ошибка отправки уведомления исполнителю: {e}")
+
+    return order

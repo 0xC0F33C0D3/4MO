@@ -19,7 +19,7 @@ async def start_order_assignment(update: Update, context: ContextTypes.DEFAULT_T
     orders = get_orders(db)
     db.close()
 
-    available_orders = [o for o in orders if o.status == "Ожидает выполнения"]
+    available_orders = [o for o in orders if o.status == "Новый"]
     if not available_orders:
         await update.message.reply_text("🔍 Нет доступных заказов.")
         return ConversationHandler.END
@@ -41,7 +41,7 @@ async def choose_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return CHOOSE_ORDER
 
     db = SessionLocal()
-    order = assign_order_to_executor(db, int(order_id), user_id)
+    order =  await assign_order_to_executor(db, int(order_id), user_id)
     db.close()
 
     if not order:
