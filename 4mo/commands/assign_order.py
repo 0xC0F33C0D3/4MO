@@ -41,7 +41,8 @@ async def choose_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return CHOOSE_ORDER
 
     db = SessionLocal()
-    order =  await assign_order_to_executor(db, int(order_id), user_id)
+    user = get_user(db, user_id)
+    order =  await assign_order_to_executor(db, int(order_id), user.id)
     db.close()
 
     if not order:

@@ -32,7 +32,7 @@ async def enter_description(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         db.close()
         return ConversationHandler.END
 
-    create_order(db, description, user_id)
+    create_order(db, description, user.id)
     db.close()
 
     await update.message.reply_text("✅ Заказ успешно создан! Он теперь доступен исполнителям.")

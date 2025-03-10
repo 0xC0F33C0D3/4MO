@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
@@ -12,7 +12,9 @@ class User(Base):
     user_type = Column(String)  # 'customer' или 'executor'
     balance = Column(Float, default=0.0)
     rating = Column(Float, default=0.0)
+    rating_count = Column(Integer, default=0)
     registered_at = Column(DateTime, default=datetime.utcnow)  # Дата регистрации
+    is_online = Column(Boolean, default=False)
 
     # Связь с заказами, которые пользователь создал
     orders = relationship("Order", foreign_keys="[Order.customer_id]", back_populates="customer")

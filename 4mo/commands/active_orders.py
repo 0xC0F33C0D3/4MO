@@ -15,9 +15,9 @@ async def active_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     if user.user_type == "Исполнитель":
-        orders = get_active_orders_for_executor(db, user_id)
+        orders = get_active_orders_for_executor(db, user.id)
     else:
-        orders = get_unfinished_orders_for_customer(db, user_id)
+        orders = get_unfinished_orders_for_customer(db, user.id)
 
     db.close()
 
